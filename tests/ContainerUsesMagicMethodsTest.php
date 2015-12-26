@@ -12,12 +12,12 @@ use PhpLab\Di\Fake\{Component, Service, Object};
 
 class ContainerUsesMagicMethodsTest extends \PHPUnit_Framework_TestCase
 {
-    protected $container;
+    protected $app;
 
     public function setUp()
     {
-        $this->container = new Container();
-        $this->container->component = function () {
+        $this->app = new Container();
+        $this->app->component = function () {
             return new Component(function ($value) {
                 return '#' . $value;
             });
@@ -26,88 +26,88 @@ class ContainerUsesMagicMethodsTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldGetPresettedComponentUsingMagic()
     {
-        $service = $this->container->component;
+        $service = $this->app->component;
         $this->assertInstanceOf('\PhpLab\Di\Fake\Component', $service);
     }
 
     public function testShouldThrowExceptionIfServiceDefinitionNotFoundUsingMagic()
     {
         $this->setExpectedException('\PhpLab\Di\NotFoundException');
-        $this->container->commonService;
+        $this->app->commonService;
     }
 
     public function testShouldGetServiceUsingMagic()
     {
-        $this->container->commonService = function (Container $container) {
-            return new Service($container->component);
+        $this->app->commonService = function (Container $di) {
+            return new Service($di->component);
         };
-        $service = $this->container->commonService;
+        $service = $this->app->commonService;
         $this->assertInstanceOf('\PhpLab\Di\Fake\Service', $service);
     }
 
     public function testShouldGetServiceAfterChangeDefinitionUsingMagic()
     {
-        $this->container->commonService = function (Container $container) {
-            return new Service($container->component);
+        $this->app->commonService = function (Container $di) {
+            return new Service($di->component);
         };
-        $this->container->commonService = function (Container $container) {
-            return new Service($container->component, 'xml');
+        $this->app->commonService = function (Container $di) {
+            return new Service($di->component, 'xml');
         };
-        $service = $this->container->commonService;
+        $service = $this->app->commonService;
         $this->assertEquals('xml', $service->getFormat());
     }
 
     public function testShouldThrowExceptionIfChangeDefinitionAfterGettingServiceUsingMagic()
     {
         $this->setExpectedException('\PhpLab\Di\FrozenException');
-        $this->container->commonService = function (Container $container) {
-            return new Service($container->component);
+        $this->app->commonService = function (Container $di) {
+            return new Service($di->component);
         };
-        $service = $this->container->commonService;
-        $this->container->commonService = function (Container $container) {
-            return new Service($container->component, 'xml');
+        $service = $this->app->commonService;
+        $this->app->commonService = function (Container $di) {
+            return new Service($di->component, 'xml');
         };
     }
 
     public function testShouldGetObjectUsingMagic()
     {
-        $this->container->_newObjectEveryTime = function () {
+        $this->app->_newObjectEveryTime = function () {
             return new Object();
         };
-        $instance = $this->container->_newObjectEveryTime;
+        $instance = $this->app->_newObjectEveryTime;
         $this->assertInstanceOf('\PhpLab\Di\Fake\Object', $instance);
     }
 
     public function testShouldGetNewInstanceOfObjectUsingMagic()
     {
-        $this->container->_newObjectEveryTime = function () {
+        $this->app->_newObjectEveryTime = function () {
             return new Object();
         };
-        $instance1 = $this->container->_newObjectEveryTime;
-        $instance2 = $this->container->_newObjectEveryTime;
+        $instance1 = $this->app->_newObjectEveryTime;
+        $instance2 = $this->app->_newObjectEveryTime;
         $this->assertNotSame($instance1, $instance2);
     }
 
     public function testShouldGetObjectAfterChangeDefinitionUsingMagic()
     {
-        $this->container->_newObjectEveryTime = function () {
+        $this->app->_newObjectEveryTime = function () {
             return new Object();
         };
-        $this->container->_newObjectEveryTime = function () {
+        $this->app->_newObjectEveryTime = function () {
             return new Object('value');
         };
-        $instance = $this->container->_newObjectEveryTime;
+        $instance = $this->app->_newObjectEveryTime;
         $this->assertEquals('value', $instance->getValue());
     }
 
     public function testShouldThrowExceptionIfChangeDefinitionAfterGettingObjectUsingMagic()
     {
         $this->setExpectedException('\PhpLab\Di\FrozenException');
-        $this->container->_newObjectEveryTime = function () {
+        $this->app->_newObjectEveryTime = function () {
             return new Object();
         };
-        $instance = $this->container->_newObjectEveryTime;
-        $this->container->_newObjectEveryTime = function () {
+        $instance = $this->app->_newObjectEveryTime;
+        $this->app->_newObjectEveryTime = function () {
             return new Object('value');
         };
     }

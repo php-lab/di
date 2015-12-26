@@ -12,12 +12,12 @@ use PhpLab\Di\Fake\{Component, Service};
 
 class ContainerWithServicesTest extends \PHPUnit_Framework_TestCase
 {
-    protected $container;
+    protected $app;
 
     public function setUp()
     {
-        $this->container = new Container();
-        $this->container->set('component', function () {
+        $this->app = new Container();
+        $this->app->set('component', function () {
             return new Component(function ($value) {
                 return '#' . $value;
             });
@@ -26,110 +26,110 @@ class ContainerWithServicesTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldGetPresettedComponent()
     {
-        $service = $this->container->get('component');
+        $service = $this->app->get('component');
         $this->assertInstanceOf('\PhpLab\Di\Fake\Component', $service);
     }
 
     public function testShouldThrowExceptionIfServiceDefinitionNotFound()
     {
         $this->setExpectedException('\PhpLab\Di\NotFoundException');
-        $this->container->get('commonService');
+        $this->app->get('commonService');
     }
 
     public function testShouldAssertWhatServiceDefinitionNotExists()
     {
-        $result = $this->container->has('commonService');
+        $result = $this->app->has('commonService');
         $this->assertFalse($result);
     }
 
     public function testShouldAssertWhatServiceDefinitionExists()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $result = $this->container->has('commonService');
+        $result = $this->app->has('commonService');
         $this->assertTrue($result);
     }
 
     public function testShouldGetService()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $service = $this->container->get('commonService');
+        $service = $this->app->get('commonService');
         $this->assertInstanceOf('\PhpLab\Di\Fake\Service', $service);
     }
 
     public function testShouldGetSameService()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $instance1 = $this->container->get('commonService');
-        $instance2 = $this->container->get('commonService');
+        $instance1 = $this->app->get('commonService');
+        $instance2 = $this->app->get('commonService');
         $this->assertSame($instance1, $instance2);
     }
 
 
     public function testShouldCallMethodOfComponentFromService()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $service = $this->container->get('commonService');
+        $service = $this->app->get('commonService');
         $result = $service->getComponent()->getResult('value');
         $this->assertEquals('#value', $result);
     }
 
     public function testShouldDefineServiceWithOptionalArgument()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'), 'xml');
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'), 'xml');
         });
-        $service = $this->container->get('commonService');
+        $service = $this->app->get('commonService');
         $this->assertEquals('xml', $service->getFormat());
     }
 
     public function testShouldDefineServiceWithSetterInjection()
     {
-        $this->container->set('commonService', function (Container $container) {
-            $service = new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            $service = new Service($di->get('component'));
             $service->setFormat('xml');
 
             return $service;
         });
-        $service = $this->container->get('commonService');
+        $service = $this->app->get('commonService');
         $this->assertEquals('xml', $service->getFormat());
     }
 
     public function testShouldGetServiceAfterChangeDefinition()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'), 'xml');
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'), 'xml');
         });
-        $service = $this->container->get('commonService');
+        $service = $this->app->get('commonService');
         $this->assertEquals('xml', $service->getFormat());
     }
 
     public function testShouldThrowExceptionIfChangeDefinitionAfterGettingService()
     {
         $this->setExpectedException('\PhpLab\Di\FrozenException');
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $service = $this->container->get('commonService');
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'), 'xml');
+        $service = $this->app->get('commonService');
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'), 'xml');
         });
     }
 
     public function testShouldThrowExceptionIfExtendServiceDefinitionNotFound()
     {
         $this->setExpectedException('\PhpLab\Di\NotFoundException');
-        $this->container->extend('commonService', function ($service) {
+        $this->app->extend('commonService', function ($service) {
             $service->setFormat('xml');
 
             return $service;
@@ -138,26 +138,26 @@ class ContainerWithServicesTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldExtendServiseDefinition()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $this->container->extend('commonService', function ($service) {
+        $this->app->extend('commonService', function ($service) {
             $service->setFormat('xml');
 
             return $service;
         });
-        $service = $this->container->get('commonService');
+        $service = $this->app->get('commonService');
         $this->assertEquals('xml', $service->getFormat());
     }
 
     public function testShouldThrowExceptionIfExtendDefinitionAfterGettingService()
     {
         $this->setExpectedException('\PhpLab\Di\FrozenException');
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $service = $this->container->get('commonService');
-        $this->container->extend('commonService', function ($service) {
+        $service = $this->app->get('commonService');
+        $this->app->extend('commonService', function ($service) {
             $service->setFormat('xml');
 
             return $service;
@@ -166,11 +166,11 @@ class ContainerWithServicesTest extends \PHPUnit_Framework_TestCase
 
     public function testShouldRemoveServiceDefinition()
     {
-        $this->container->set('commonService', function (Container $container) {
-            return new Service($container->get('component'));
+        $this->app->set('commonService', function (Container $di) {
+            return new Service($di->get('component'));
         });
-        $this->container->remove('commonService');
-        $result = $this->container->has('commonService');
+        $this->app->remove('commonService');
+        $result = $this->app->has('commonService');
         $this->assertFalse($result);
     }
 }
